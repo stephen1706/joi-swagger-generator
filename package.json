@@ -1,0 +1,22 @@
+{
+  "name": "joi-swagger-generator",
+  "version": "1.0.8",
+  "description": "generate swagger.json file from joi schema file",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stephen Adipradhana",
+  "license": "ISC",
+  "preferGlobal": true,
+  "main": "./index.js",
+  "bin": {
+    "joi-swagger-generator": "./index.js"
+  },
+  "dependencies": {
+    "fs-extra": "^6.0.1",
+    "joi": "^13.4.0",
+    "joi-to-swagger": "^3.0.0",
+    "yargs": "^11.0.0"
+  }
+}
