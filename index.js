@@ -8,19 +8,19 @@ const j2s = require('joi-to-swagger');
 const path = require('path');
 const fs = require('fs-extra');
 
-const validatorFile = path.join(__dirname, '../../', argv.validator? argv.validator : 'validator');
+const validatorFile = path.join(__dirname, '../../../', argv.validator? argv.validator : 'validator');
 if(!fs.pathExistsSync(validatorFile)){
     return console.error(`Validator file not found in ${validatorFile}, please create validator file first`);
 }
 const validator = require(validatorFile);
 
-const headerFile = path.join(__dirname, '../../', argv.header? argv.header : 'header.json');
+const headerFile = path.join(__dirname, '../../../', argv.header? argv.header : 'header.json');
 if(!fs.pathExistsSync(headerFile)){
     return console.error(`Header file not found in ${headerFile}, please create validator file first`);
 }
 
 const json = require(headerFile);
-const outputFile = path.join(__dirname, '../../', argv.output? argv.output : 'swagger.json');
+const outputFile = path.join(__dirname, '../../../', argv.output? argv.output : 'swagger.json');
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
