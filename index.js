@@ -133,6 +133,17 @@ for(key in validator.apiList) {
         }
     }
    
+    const apiGateway = {
+        passthroughBehavior: "when_no_match",
+        httpMethod: currentValue.type,
+        type: "http_proxy",
+        uri: "http://${stageVariables.url}" + convertedPath,
+        responses: {
+            default: {
+                statusCode: "200"
+            }
+        }
+    }
     paths[currentValue.type] = {
         summary: currentValue.name,
         consumes: [
@@ -142,7 +153,8 @@ for(key in validator.apiList) {
             'application/json'
         ],
         parameters,
-        responses
+        responses,
+        "x-amazon-apigateway-integration": apiGateway
     }
 }
 
