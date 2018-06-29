@@ -198,7 +198,7 @@ Define the header.json file that will be used as the header information in the s
 
 You can install the package globally or just include them in the scripts in the package.json
 ```
-    "swagger-generator": "joi-swagger-generator -v utils/validator.js -h swagger/header.json -o swagger/swagger.json"
+    "swagger-generator": "joi-swagger-generator -v ./utils/validator.js -h ./swagger/header.json -o ./swagger/swagger.json"
 ```
 ```
 -h is the path to the header file
