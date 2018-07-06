@@ -208,7 +208,116 @@ You can install the package globally or just include them in the scripts in the 
 -o is the location of the swagger file will be generated
 ```
 
+Example for 1 validator file
+```
+const Joi = require('joi')
+const JoiPhone = Joi.extend(require('joi-phone-number'))
+
+module.exports =  {
+    name: 'Account Services',
+    apiList: {
+        healthCheck: {
+            name: 'health check',
+            path: '/health',
+            type: 'get'
+        },
+        login: {
+            name: 'login',
+            path: '/login',
+            type: 'post',
+            JoiSchema: {
+                body: Joi.object().keys({
+                    password: Joi.string().required(),
+                    email: Joi.string().email(),
+                    phoneNumber: JoiPhone.string().phoneNumber({ defaultCountry: 'MY' })
+                }).xor('email', 'phoneNumber'),
+
+                response: {
+                    200: {
+                        description: "successfully login",
+                        header: Joi.object().keys({
+                                    Authorization: Joi.string().required()
+                                }),
+                        body: Joi.object().keys({
+                            resultMessage: Joi.string().required(),
+                            resultDescription: Joi.string().required(),
+                            body: Joi.object().keys({
+                                accessToken: Joi.string().required(),
+                                refreshToken: Joi.string().required()
+                            })
+                        })
+                    },
+                    400: {
+                        description: "invalid request body",
+                        body: Joi.object().keys({
+                            resultMessage: Joi.string().required(),
+                            resultDescription: Joi.string().required()
+                        })
+                    },
+                    401: {
+                        description: "invalid credential",
+                        body: Joi.object().keys({
+                            resultMessage: Joi.string().required(),
+                            resultDescription: Joi.string().required()
+                        })
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
 Second way is to define the directory, and the library will recursively look for *.validator.js files. Just add -r in the command to enable this option
 ```
 joi-swagger-generator -r -v ./utils/ -h ./swagger/header.json -o ./swagger/swagger.json
+```
+
+Example for multiple validator file
+```
+const Joi = require('joi')
+const JoiPhone = Joi.extend(require('joi-phone-number'))
+
+module.exports =  {
+    name: 'login',
+    path: '/login',
+    type: 'post',
+    JoiSchema: {
+        body: Joi.object().keys({
+            password: Joi.string().required(),
+            email: Joi.string().email(),
+            phoneNumber: JoiPhone.string().phoneNumber({ defaultCountry: 'MY' })
+        }).xor('email', 'phoneNumber'),
+        response: {
+            200: {
+                description: "successfully login",
+                header: Joi.object().keys({
+                            Authorization: Joi.string().required()
+                        }),
+                body: Joi.object().keys({
+                    resultMessage: Joi.string().required(),
+                    resultDescription: Joi.string().required(),
+                    body: Joi.object().keys({
+                        accessToken: Joi.string().required(),
+                        refreshToken: Joi.string().required()
+                    })
+                })
+            },
+            400: {
+                description: "invalid request body",
+                body: Joi.object().keys({
+                    resultMessage: Joi.string().required(),
+                    resultDescription: Joi.string().required()
+                })
+            },
+            401: {
+                description: "invalid credential",
+                body: Joi.object().keys({
+                    resultMessage: Joi.string().required(),
+                    resultDescription: Joi.string().required()
+                })
+            }
+        }
+    }
+}
 ```
