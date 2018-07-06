@@ -3,7 +3,16 @@ const argv = require('yargs')
             .alias('v', 'validator')
             .alias('o', 'output')
             .alias('h', 'header')
+            .describe('v', 'Location of validator file or directory of the folder')
+            .describe('o', 'Location of the output file location')
+            .describe('h', 'Location of the header file in json format')
+            .describe('r', 'For multiple files, will recursively search for .validator.js file in that directory')
+            .demandOption(['v','o','h'])
+            .help('h')
+            .alias('h', 'help')
+            .example('joi-swagger-generator -r -v ./validators -h ./header.json -o ./swagger.json')
             .argv
+            
 const j2s = require('joi-to-swagger');
 const path = require('path');
 const fs = require('fs-extra');
