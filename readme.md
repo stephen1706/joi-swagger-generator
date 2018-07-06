@@ -195,6 +195,8 @@ Define the header.json file that will be used as the header information in the s
     ]
 }
 ```
+There are 2 ways to define the file
+First way is to define 1 specific file that will export all the apiList
 
 You can install the package globally or just include them in the scripts in the package.json
 ```
@@ -204,4 +206,9 @@ You can install the package globally or just include them in the scripts in the 
 -h is the path to the header file
 -v is the path to your validator class
 -o is the location of the swagger file will be generated
+```
+
+Second way is to define the directory, and the library will recursively look for *.validator.js files. Just add -r in the command to enable this option
+```
+joi-swagger-generator -r -v ./utils/ -h ./swagger/header.json -o ./swagger/swagger.json
 ```

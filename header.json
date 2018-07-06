@@ -1,0 +1,16 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Identity account",
+        "version": "1.0.0",
+        "title": "Identity Service",
+        "contact": {
+            "email": "stephen_adipradhana@astro.com.my"
+        }
+    },
+    "basePath": "/users",
+    "schemes": [
+        "http",
+        "https"
+    ]
+}

@@ -1,0 +1,263 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Identity account",
+        "version": "1.0.0",
+        "title": "Identity Service",
+        "contact": {
+            "email": "stephen_adipradhana@astro.com.my"
+        }
+    },
+    "basePath": "/users",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "paths": {
+        "/login": {
+            "post": {
+                "summary": "login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/loginPostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully login",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost200Response"
+                        },
+                        "headers": {
+                            "Authorization": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost400Response"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid credential",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost401Response"
+                        }
+                    }
+                },
+                "x-amazon-apigateway-integration": {
+                    "passthroughBehavior": "when_no_match",
+                    "httpMethod": "post",
+                    "type": "http_proxy",
+                    "uri": "http://${stageVariables.url}/login",
+                    "responses": {
+                        "default": {
+                            "statusCode": "200"
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "post": {
+                "summary": "register",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/registerPostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully register",
+                        "schema": {
+                            "$ref": "#/definitions/registerPost200Response"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/registerPost400Response"
+                        }
+                    }
+                },
+                "x-amazon-apigateway-integration": {
+                    "passthroughBehavior": "when_no_match",
+                    "httpMethod": "post",
+                    "type": "http_proxy",
+                    "uri": "http://${stageVariables.url}/",
+                    "responses": {
+                        "default": {
+                            "statusCode": "200"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "loginPostBody": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "phoneNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "loginPost200Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "object",
+                    "required": [
+                        "accessToken",
+                        "refreshToken"
+                    ],
+                    "properties": {
+                        "accessToken": {
+                            "type": "string"
+                        },
+                        "refreshToken": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "loginPost400Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                }
+            }
+        },
+        "loginPost401Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                }
+            }
+        },
+        "registerPostBody": {
+            "type": "object",
+            "required": [
+                "password",
+                "partnerKey"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "phoneNumber": {
+                    "type": "string"
+                },
+                "partnerKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "registerPost200Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "object",
+                    "required": [
+                        "accountId"
+                    ],
+                    "properties": {
+                        "accountId": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                        }
+                    }
+                }
+            }
+        },
+        "registerPost400Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
