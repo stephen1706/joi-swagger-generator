@@ -8,8 +8,7 @@ const argv = require('yargs')
             .describe('h', 'Location of the header file in json format')
             .describe('r', 'For multiple files, will recursively search for .validator.js file in that directory')
             .demandOption(['v','o','h'])
-            .help('h')
-            .alias('h', 'help')
+            .help('help')
             .example('joi-swagger-generator -r -v ./validators -h ./header.json -o ./swagger.json')
             .argv
             
@@ -31,8 +30,24 @@ if(argv.r){
         files.forEach((value, index, array) => {
             requires.push(require(value))
         })
-        const json = require('./header.json');
-        const relativeOutputFile = './output.json';
+
+        const relativeHeaderPath = argv.header;
+        const headerFile = path.resolve(relativeHeaderPath);
+        if(!fs.pathExistsSync(headerFile)){
+            return console.error(`Header file not found in ${headerFile}, please create header file first`);
+        } else {
+            try {
+                fs.ensureFileSync(headerFile);
+            } catch(e){
+                return console.error(`Header file not found in ${headerFile}, please create header file first`);
+            }
+        }
+        
+        const json = require(headerFile);
+
+        const basePath = json.basePath;
+
+        const relativeOutputFile = argv.output;
         if(!relativeOutputFile){
             return console.error("Output file location is required");
         }
@@ -44,8 +59,8 @@ if(argv.r){
             const currentValue = requires[key];
         
             let paths;
-            let convertedPath = currentValue.path;
-            const splitPath = currentValue.path.split('/');
+            let convertedPath = path.join(basePath, currentValue.path);
+            const splitPath = convertedPath.split('/');
             for(const i in splitPath){
                 let eachPath = splitPath[i];
                 if(eachPath.startsWith(":")){
@@ -202,20 +217,23 @@ if(argv.r){
     }
     
     const json = require(headerFile);
+    const basePath = json.basePath;
+
     const relativeOutputFile = argv.output;
     if(!relativeOutputFile){
         return console.error("Output file location is required");
     }
     const outputFile = path.resolve(relativeOutputFile);
-    
+
     json.paths = {};
     json.definitions = {};
     for(key in validator.apiList) {
         const currentValue = validator.apiList[key];
     
         let paths;
-        let convertedPath = currentValue.path;
-        const splitPath = currentValue.path.split('/');
+        let convertedPath = path.join(basePath, currentValue.path);
+
+        const splitPath = convertedPath.split('/');
         for(const i in splitPath){
             let eachPath = splitPath[i];
             if(eachPath.startsWith(":")){
