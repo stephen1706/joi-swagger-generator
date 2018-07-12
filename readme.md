@@ -4,6 +4,7 @@ Usage:
 Define your joi validator class
 
 Define the header.json file that will be used as the header information in the swagger file
+The basePath will be join together with the path in validator class, in the example all url will be /users/*
 ```
 {
     "swagger": "2.0",
@@ -143,6 +144,192 @@ module.exports =  {
                     resultMessage: Joi.string().required(),
                     resultDescription: Joi.string().required()
                 })
+            }
+        }
+    }
+}
+```
+
+Result example
+```
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Identity account",
+        "version": "1.0.0",
+        "title": "Identity Service",
+        "contact": {
+            "email": "stephen_adipradhana@astro.com.my"
+        }
+    },
+    "basePath": "/users",
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "paths": {
+        "/users/health": {
+            "get": {
+                "summary": "health check",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "success operation"
+                    }
+                },
+                "x-amazon-apigateway-integration": {
+                    "passthroughBehavior": "when_no_match",
+                    "httpMethod": "get",
+                    "type": "http_proxy",
+                    "uri": "http://${stageVariables.url}/users/health",
+                    "responses": {
+                        "default": {
+                            "statusCode": "200"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/login": {
+            "post": {
+                "summary": "login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/loginPostBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully login",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost200Response"
+                        },
+                        "headers": {
+                            "Authorization": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost400Response"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid credential",
+                        "schema": {
+                            "$ref": "#/definitions/loginPost401Response"
+                        }
+                    }
+                },
+                "x-amazon-apigateway-integration": {
+                    "passthroughBehavior": "when_no_match",
+                    "httpMethod": "post",
+                    "type": "http_proxy",
+                    "uri": "http://${stageVariables.url}/users/login",
+                    "responses": {
+                        "default": {
+                            "statusCode": "200"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "loginPostBody": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email"
+                },
+                "phoneNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "loginPost200Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "object",
+                    "required": [
+                        "accessToken",
+                        "refreshToken"
+                    ],
+                    "properties": {
+                        "accessToken": {
+                            "type": "string"
+                        },
+                        "refreshToken": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "loginPost400Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                }
+            }
+        },
+        "loginPost401Response": {
+            "type": "object",
+            "required": [
+                "resultMessage",
+                "resultDescription"
+            ],
+            "properties": {
+                "resultMessage": {
+                    "type": "string"
+                },
+                "resultDescription": {
+                    "type": "string"
+                }
             }
         }
     }
