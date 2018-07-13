@@ -160,17 +160,8 @@ if(argv.r){
                 }
             }
            
-            const apiGateway = {
-                passthroughBehavior: "when_no_match",
-                httpMethod: currentValue.type,
-                type: "http_proxy",
-                uri: "http://${stageVariables.url}" + convertedPath,
-                responses: {
-                    default: {
-                        statusCode: "200"
-                    }
-                }
-            }
+            const apiGateway = getApiGatewayIntegration(currentValue, convertedPath)
+
             paths[currentValue.type] = {
                 summary: currentValue.name,
                 consumes: [
@@ -333,17 +324,8 @@ if(argv.r){
             }
         }
        
-        const apiGateway = {
-            passthroughBehavior: "when_no_match",
-            httpMethod: currentValue.type,
-            type: "http_proxy",
-            uri: "http://${stageVariables.url}" + convertedPath,
-            responses: {
-                default: {
-                    statusCode: "200"
-                }
-            }
-        }
+        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath);
+
         paths[currentValue.type] = {
             summary: currentValue.name,
             consumes: [
@@ -365,4 +347,31 @@ if(argv.r){
             console.log('successfully write swagger file to ' + outputFile);
         }
     });
+}
+
+function getApiGatewayIntegration(currentValue, convertedPath){
+    const apiGateway = {
+        passthroughBehavior: "when_no_match",
+        httpMethod: currentValue.type,
+        type: "http_proxy",
+        uri: "http://${stageVariables.url}" + convertedPath,
+        responses: {
+            default: {
+                statusCode: "200"
+            }
+        }
+    }
+    let requestPath = {};
+    const splitPath = convertedPath.split('/');
+    for(const i in splitPath){
+        let eachPath = splitPath[i];
+        if(eachPath.startsWith("{") && eachPath.endsWith("}")){
+            const pathName = eachPath.slice(1, -1);
+            const keyName = "integration.request.path." + pathName;
+            const valueName = "method.request.path." + pathName;
+            requestPath[keyName] = valueName;
+        }
+    }
+    apiGateway["requestParameters"] = requestPath;
+    return apiGateway;
 }
