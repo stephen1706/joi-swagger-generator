@@ -290,7 +290,6 @@ if(argv.r){
             }
             if(currentValue.JoiSchema.query){
                 const {swagger} = j2s(currentValue.JoiSchema.query);
-                
                 for(queryKey in swagger.properties) {
                     parameters.push({
                         name: queryKey,
