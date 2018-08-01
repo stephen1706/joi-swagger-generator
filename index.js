@@ -131,7 +131,7 @@ if(argv.r){
                         parameters.push({
                             name: queryKey,
                             in: "query",
-                            required: true,
+                            required: swagger.required.includes(queryKey),
                             type: swagger.properties[queryKey].type
                         });
                     }
@@ -295,7 +295,7 @@ if(argv.r){
                     parameters.push({
                         name: queryKey,
                         in: "query",
-                        required: true,
+                        required: swagger.required.includes(queryKey),
                         type: swagger.properties[queryKey].type
                     });
                 }
