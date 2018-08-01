@@ -101,7 +101,7 @@ if(argv.r){
                 if(currentValue.JoiSchema.body){
                     const {swagger} = j2s(currentValue.JoiSchema.body);
             
-                    const modelName = `${currentValue.name}${currentValue.type.capitalize()}Body`;
+                    const modelName = `${currentValue.name.replace(" ", "")}${currentValue.type.capitalize()}Body`;
                     json.definitions[modelName] = swagger;
                     parameters.push({
                         name: "body",

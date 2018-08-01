@@ -1,10 +1,11 @@
 {
   "name": "@astro-my/joi-swagger-generator",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "generate swagger.json file from joi schema file",
   "scripts": {
     "start": "node index.js",
     "test": "joi-swagger-generator -v ./test/validator.js -h ./test/header.json -o ./test/swagger.json",
+    "test-recursive": "joi-swagger-generator -r -v ./test/ -h ./test/header.json -o ./test/swagger.json",
     "help": "joi-swagger-generator --help"
   },
   "author": "Stephen Adipradhana",

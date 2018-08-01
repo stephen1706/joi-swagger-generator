@@ -45,7 +45,7 @@ module.exports =  {
     name: 'Account Services',
     apiList: {
         healthCheck: {
-            name: 'health check', //okay using whitespace in 1 file validator
+            name: 'health check',
             path: '/health',
             type: 'get'
         },
@@ -107,7 +107,7 @@ const Joi = require('joi')
 const JoiPhone = Joi.extend(require('joi-phone-number'))
 
 module.exports =  {
-    name: 'login', //for multiple validator files, name field must not contain any whitespace
+    name: 'login',
     path: '/login',
     type: 'post',
     JoiSchema: {
