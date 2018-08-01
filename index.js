@@ -141,7 +141,7 @@ if(argv.r){
                     const {swagger} = j2s(currentValue.JoiSchema.response);
         
                     for(statusCode in swagger.properties) {
-                        const modelName = `${currentValue.name}${currentValue.type.capitalize()}${statusCode}Response`;
+                        const modelName = `${currentValue.name.replace(" ", "")}${currentValue.type.capitalize()}${statusCode}Response`;
                         json.definitions[modelName] = swagger.properties[statusCode].properties.body;
         
                         const data = {

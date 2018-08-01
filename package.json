@@ -1,6 +1,6 @@
 {
   "name": "@astro-my/joi-swagger-generator",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "generate swagger.json file from joi schema file",
   "scripts": {
     "start": "node index.js",
