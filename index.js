@@ -56,6 +56,7 @@ if(argv.r){
         json.paths = {};
         json.definitions = {};
         for(key in requires) {
+            const mapHeader = {};
             const currentValue = requires[key];
         
             let paths;
@@ -153,6 +154,10 @@ if(argv.r){
         
                         if(swagger.properties[statusCode].properties.header){
                             data['headers'] = swagger.properties[statusCode].properties.header.properties;
+                        
+                            for(headerName in swagger.properties[statusCode].properties.header.properties) {
+                                mapHeader[`integration.request.header.${headerName}`] = `method.request.header.${headerName}`;
+                            }
                         }
                         
                         responses[statusCode] = data;
@@ -160,7 +165,7 @@ if(argv.r){
                 }
             }
            
-            const apiGateway = getApiGatewayIntegration(currentValue, convertedPath)
+            const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader)
 
             paths[currentValue.type] = {
                 summary: currentValue.name,
@@ -303,7 +308,6 @@ if(argv.r){
             if(currentValue.JoiSchema.response){
                 responses = {};
                 const {swagger} = j2s(currentValue.JoiSchema.response);
-                console.log(JSON.stringify(swagger));
 
                 for(statusCode in swagger.properties) {
                     const modelName = `${key}${currentValue.type.capitalize()}${statusCode}Response`;
@@ -320,7 +324,7 @@ if(argv.r){
                         data['headers'] = swagger.properties[statusCode].properties.header.properties;
                         
                         for(headerName in swagger.properties[statusCode].properties.header.properties) {
-                            mapHeader[`method.request.header.${headerName}`] = `integration.request.header.${headerName}`;
+                            mapHeader[`integration.request.header.${headerName}`] = `method.request.header.${headerName}`;
                         }
                     }
                     
@@ -366,7 +370,7 @@ function getApiGatewayIntegration(currentValue, convertedPath, mapHeader){
             }
         }
     }
-    let requestPath = {};
+    let requestPath = {...mapHeader};
     const splitPath = convertedPath.split('/');
     for(const i in splitPath){
         let eachPath = splitPath[i];
@@ -379,6 +383,6 @@ function getApiGatewayIntegration(currentValue, convertedPath, mapHeader){
     }
 
     apiGateway["requestParameters"] = requestPath;
-    apiGateway["responseParameters"] = mapHeader;
+    // apiGateway["responseParameters"] = mapHeader;
     return apiGateway;
 }
