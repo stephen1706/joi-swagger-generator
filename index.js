@@ -219,6 +219,7 @@ if(argv.r){
     json.paths = {};
     json.definitions = {};
     for(key in validator.apiList) {
+        const mapHeader = {};
         const currentValue = validator.apiList[key];
     
         let paths;
@@ -302,7 +303,8 @@ if(argv.r){
             if(currentValue.JoiSchema.response){
                 responses = {};
                 const {swagger} = j2s(currentValue.JoiSchema.response);
-    
+                console.log(JSON.stringify(swagger));
+
                 for(statusCode in swagger.properties) {
                     const modelName = `${key}${currentValue.type.capitalize()}${statusCode}Response`;
                     json.definitions[modelName] = swagger.properties[statusCode].properties.body;
@@ -316,6 +318,10 @@ if(argv.r){
     
                     if(swagger.properties[statusCode].properties.header){
                         data['headers'] = swagger.properties[statusCode].properties.header.properties;
+                        
+                        for(headerName in swagger.properties[statusCode].properties.header.properties) {
+                            mapHeader[`method.request.header.${headerName}`] = `integration.request.header.${headerName}`;
+                        }
                     }
                     
                     responses[statusCode] = data;
@@ -323,7 +329,7 @@ if(argv.r){
             }
         }
        
-        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath);
+        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader);
 
         paths[currentValue.type] = {
             summary: currentValue.name,
@@ -348,7 +354,7 @@ if(argv.r){
     });
 }
 
-function getApiGatewayIntegration(currentValue, convertedPath){
+function getApiGatewayIntegration(currentValue, convertedPath, mapHeader){
     const apiGateway = {
         passthroughBehavior: "when_no_match",
         httpMethod: currentValue.type,
@@ -371,6 +377,8 @@ function getApiGatewayIntegration(currentValue, convertedPath){
             requestPath[keyName] = valueName;
         }
     }
+
     apiGateway["requestParameters"] = requestPath;
+    apiGateway["responseParameters"] = mapHeader;
     return apiGateway;
 }
