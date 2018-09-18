@@ -87,6 +87,7 @@ if(argv.r){
                     "description": "success operation"
                 }
             };
+            let deprecated = false
             if(currentValue.JoiSchema){
                 if(currentValue.JoiSchema.header){
                     const {swagger} = j2s(currentValue.JoiSchema.header);
@@ -165,6 +166,10 @@ if(argv.r){
                         responses[statusCode] = data;
                     }
                 }
+                // check for deprecation
+                if(currentValue.JoiSchema.deprecated && currentValue.JoiSchema.deprecated === true) {
+                    deprecated = true
+                }
             }
            
             const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
@@ -179,6 +184,7 @@ if(argv.r){
                 ],
                 parameters,
                 responses,
+                deprecated,
                 "x-amazon-apigateway-integration": apiGateway
             }
         }
@@ -258,6 +264,7 @@ if(argv.r){
                 "description": "success operation"
             }
         };
+        let deprecated = false
         if(currentValue.JoiSchema){
             if(currentValue.JoiSchema.header){
                 const {swagger} = j2s(currentValue.JoiSchema.header);
@@ -337,6 +344,11 @@ if(argv.r){
                     responses[statusCode] = data;
                 }
             }
+
+            // check for deprecation
+            if(currentValue.JoiSchema.deprecated && currentValue.JoiSchema.deprecated === true) {
+                deprecated = true
+            }
         }
        
         const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
@@ -351,6 +363,7 @@ if(argv.r){
             ],
             parameters,
             responses,
+            deprecated,
             "x-amazon-apigateway-integration": apiGateway
         }
     }
