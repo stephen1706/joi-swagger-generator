@@ -23,6 +23,149 @@ String.prototype.capitalize = function() {
 const relativeValidatorPath = argv.validator;
 const validatorFile = path.resolve(relativeValidatorPath);
 
+function applyLogic(json, apiList){
+    const basePath = json.basePath;
+    json.info.title = json.info.title + " " + process.env.NODE_ENV;
+    json.info.description = json.info.description + " for " + process.env.NODE_ENV + " environment";
+
+    json.paths = {};
+    json.definitions = {};
+    for(key in apiList) {
+        const mapHeader = {};
+        const requestMap = {};
+        const currentValue = apiList[key];
+    
+        let paths;
+        let convertedPath = path.join(basePath, currentValue.path);
+        const splitPath = convertedPath.split('/');
+        for(const i in splitPath){
+            let eachPath = splitPath[i];
+            if(eachPath.startsWith(":")){
+                eachPath = eachPath.substr(1); //remove :
+                eachPath = "{" + eachPath + "}";//make {path}
+                splitPath[i] = eachPath;
+            }
+        }
+        convertedPath = splitPath.join('/');
+        
+        if(json.paths[convertedPath]){
+            paths = json.paths[convertedPath];
+        } else {
+            paths = {};
+            json.paths[convertedPath] = paths;
+        }
+        
+        let parameters = []
+        //default response
+        let responses = {
+            "200": {
+                "description": "success operation"
+            }
+        };
+        let deprecated = false
+        if(currentValue.JoiSchema){
+            if(currentValue.JoiSchema.header){
+                const {swagger} = j2s(currentValue.JoiSchema.header);
+        
+                for(headerKey in swagger.properties) {
+                    parameters.push({
+                        name: headerKey,
+                        in: "header",
+                        required: swagger.required.includes(headerKey),
+                        type: swagger.properties[headerKey].type
+                    });
+                    requestMap[`integration.request.header.${headerKey}`] = `method.request.header.${headerKey}`;
+                }
+            }
+            if(currentValue.JoiSchema.body){
+                const {swagger} = j2s(currentValue.JoiSchema.body);
+        
+                const modelName = `${currentValue.name.replace(/\s/g, "")}${currentValue.type.capitalize()}Body`;
+                json.definitions[modelName] = swagger;
+                parameters.push({
+                    name: "body",
+                    in: "body",
+                    schema: {
+                        $ref: `#/definitions/${modelName}`
+                    }
+                    // schema: swagger
+                });
+            }
+            if(currentValue.JoiSchema.path){
+                const {swagger} = j2s(currentValue.JoiSchema.path);
+        
+                for(pathKey in swagger.properties) {
+                    parameters.push({
+                        name: pathKey,
+                        in: "path",
+                        required: true,
+                        type: swagger.properties[pathKey].type
+                    });
+                }
+            }
+            if(currentValue.JoiSchema.query){
+                const {swagger} = j2s(currentValue.JoiSchema.query);
+                
+                for(queryKey in swagger.properties) {
+                    parameters.push({
+                        name: queryKey,
+                        in: "query",
+                        required: swagger.required ? swagger.required.includes(queryKey) : false,
+                        type: swagger.properties[queryKey].type
+                    });
+                }
+            }
+            if(currentValue.JoiSchema.response){
+                responses = {};
+                const {swagger} = j2s(currentValue.JoiSchema.response);
+    
+                for(statusCode in swagger.properties) {
+                    const modelName = `${currentValue.name.replace(/\s/g, "")}${currentValue.type.capitalize()}${statusCode}Response`;
+                    json.definitions[modelName] = swagger.properties[statusCode].properties.body;
+    
+                    const data = {
+                        description: swagger.properties[statusCode].properties.description.enum[0],
+                        schema: {
+                            $ref: `#/definitions/${modelName}`
+                        },
+                    };
+    
+                    if(swagger.properties[statusCode].properties.header){
+                        data['headers'] = swagger.properties[statusCode].properties.header.properties;
+                    
+                        for(headerName in swagger.properties[statusCode].properties.header.properties) {
+                            mapHeader[`integration.response.header.${headerName}`] = `method.response.header.${headerName}`;
+                        }
+                    }
+                    
+                    responses[statusCode] = data;
+                }
+            }
+            // check for deprecation
+            if(currentValue.JoiSchema.deprecated && currentValue.JoiSchema.deprecated === true) {
+                deprecated = true
+            }
+        }
+        
+        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
+
+        paths[currentValue.type] = {
+            summary: currentValue.name,
+            consumes: [
+                'application/json'
+            ],
+            produces: [
+                'application/json'
+            ],
+            parameters,
+            responses,
+            deprecated,
+            "x-amazon-apigateway-integration": apiGateway
+        }
+    }
+    return json;
+}
+
 if(argv.r){
     glob(path.join(validatorFile, "**/*.validator.js"), function (er, files) {
         console.log(files);
@@ -43,9 +186,7 @@ if(argv.r){
             }
         }
         
-        const json = require(headerFile);
-
-        const basePath = json.basePath;
+        let json = require(headerFile);
 
         const relativeOutputFile = argv.output;
         if(!relativeOutputFile){
@@ -53,141 +194,8 @@ if(argv.r){
         }
         const outputFile = path.resolve(relativeOutputFile);
         
-        json.paths = {};
-        json.definitions = {};
-        for(key in requires) {
-            const mapHeader = {};
-            const requestMap = {};
-            const currentValue = requires[key];
+        json = applyLogic(json, requires)
         
-            let paths;
-            let convertedPath = path.join(basePath, currentValue.path);
-            const splitPath = convertedPath.split('/');
-            for(const i in splitPath){
-                let eachPath = splitPath[i];
-                if(eachPath.startsWith(":")){
-                    eachPath = eachPath.substr(1); //remove :
-                    eachPath = "{" + eachPath + "}";//make {path}
-                    splitPath[i] = eachPath;
-                }
-            }
-            convertedPath = splitPath.join('/');
-            
-            if(json.paths[convertedPath]){
-                paths = json.paths[convertedPath];
-            } else {
-                paths = {};
-                json.paths[convertedPath] = paths;
-            }
-            
-            let parameters = []
-            //default response
-            let responses = {
-                "200": {
-                    "description": "success operation"
-                }
-            };
-            let deprecated = false
-            if(currentValue.JoiSchema){
-                if(currentValue.JoiSchema.header){
-                    const {swagger} = j2s(currentValue.JoiSchema.header);
-            
-                    for(headerKey in swagger.properties) {
-                        parameters.push({
-                            name: headerKey,
-                            in: "header",
-                            required: swagger.required.includes(headerKey),
-                            type: swagger.properties[headerKey].type
-                        });
-                        requestMap[`integration.request.header.${headerKey}`] = `method.request.header.${headerKey}`;
-                    }
-                }
-                if(currentValue.JoiSchema.body){
-                    const {swagger} = j2s(currentValue.JoiSchema.body);
-            
-                    const modelName = `${currentValue.name.replace(/\s/g, "")}${currentValue.type.capitalize()}Body`;
-                    json.definitions[modelName] = swagger;
-                    parameters.push({
-                        name: "body",
-                        in: "body",
-                        schema: {
-                            $ref: `#/definitions/${modelName}`
-                        }
-                        // schema: swagger
-                    });
-                }
-                if(currentValue.JoiSchema.path){
-                    const {swagger} = j2s(currentValue.JoiSchema.path);
-            
-                    for(pathKey in swagger.properties) {
-                        parameters.push({
-                            name: pathKey,
-                            in: "path",
-                            required: true,
-                            type: swagger.properties[pathKey].type
-                        });
-                    }
-                }
-                if(currentValue.JoiSchema.query){
-                    const {swagger} = j2s(currentValue.JoiSchema.query);
-                    
-                    for(queryKey in swagger.properties) {
-                        parameters.push({
-                            name: queryKey,
-                            in: "query",
-                            required: swagger.required ? swagger.required.includes(queryKey) : false,
-                            type: swagger.properties[queryKey].type
-                        });
-                    }
-                }
-                if(currentValue.JoiSchema.response){
-                    responses = {};
-                    const {swagger} = j2s(currentValue.JoiSchema.response);
-        
-                    for(statusCode in swagger.properties) {
-                        const modelName = `${currentValue.name.replace(/\s/g, "")}${currentValue.type.capitalize()}${statusCode}Response`;
-                        json.definitions[modelName] = swagger.properties[statusCode].properties.body;
-        
-                        const data = {
-                            description: swagger.properties[statusCode].properties.description.enum[0],
-                            schema: {
-                                $ref: `#/definitions/${modelName}`
-                            },
-                        };
-        
-                        if(swagger.properties[statusCode].properties.header){
-                            data['headers'] = swagger.properties[statusCode].properties.header.properties;
-                        
-                            for(headerName in swagger.properties[statusCode].properties.header.properties) {
-                                mapHeader[`integration.response.header.${headerName}`] = `method.response.header.${headerName}`;
-                            }
-                        }
-                        
-                        responses[statusCode] = data;
-                    }
-                }
-                // check for deprecation
-                if(currentValue.JoiSchema.deprecated && currentValue.JoiSchema.deprecated === true) {
-                    deprecated = true
-                }
-            }
-           
-            const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
-
-            paths[currentValue.type] = {
-                summary: currentValue.name,
-                consumes: [
-                    'application/json'
-                ],
-                produces: [
-                    'application/json'
-                ],
-                parameters,
-                responses,
-                deprecated,
-                "x-amazon-apigateway-integration": apiGateway
-            }
-        }
         fs.outputFile(outputFile, JSON.stringify(json, null, 4), function(err){
             if(err) {
                 console.error(err);
@@ -220,8 +228,7 @@ if(argv.r){
         }
     }
     
-    const json = require(headerFile);
-    const basePath = json.basePath;
+    let json = require(headerFile);
 
     const relativeOutputFile = argv.output;
     if(!relativeOutputFile){
@@ -229,145 +236,7 @@ if(argv.r){
     }
     const outputFile = path.resolve(relativeOutputFile);
 
-    json.paths = {};
-    json.definitions = {};
-    for(key in validator.apiList) {
-        const mapHeader = {};
-        const requestMap = {};
-        const currentValue = validator.apiList[key];
-    
-        let paths;
-        let convertedPath = path.join(basePath, currentValue.path);
-
-        const splitPath = convertedPath.split('/');
-        for(const i in splitPath){
-            let eachPath = splitPath[i];
-            if(eachPath.startsWith(":")){
-                eachPath = eachPath.substr(1); //remove :
-                eachPath = "{" + eachPath + "}";//make {path}
-                splitPath[i] = eachPath;
-            }
-        }
-        convertedPath = splitPath.join('/');
-        
-        if(json.paths[convertedPath]){
-            paths = json.paths[convertedPath];
-        } else {
-            paths = {};
-            json.paths[convertedPath] = paths;
-        }
-        
-        let parameters = []
-        //default response
-        let responses = {
-            "200": {
-                "description": "success operation"
-            }
-        };
-        let deprecated = false
-        if(currentValue.JoiSchema){
-            if(currentValue.JoiSchema.header){
-                const {swagger} = j2s(currentValue.JoiSchema.header);
-
-                for(headerKey in swagger.properties) {
-                    parameters.push({
-                        name: headerKey,
-                        in: "header",
-                        required: swagger.required.includes(headerKey),
-                        type: swagger.properties[headerKey].type
-                    });
-
-                        
-                    requestMap[`integration.request.header.${headerKey}`] = `method.request.header.${headerKey}`;
-                }
-            }
-            if(currentValue.JoiSchema.body){
-                const {swagger} = j2s(currentValue.JoiSchema.body);
-        
-                const modelName = `${key}${currentValue.type.capitalize()}Body`;
-                json.definitions[modelName] = swagger;
-                parameters.push({
-                    name: "body",
-                    in: "body",
-                    schema: {
-                        $ref: `#/definitions/${modelName}`
-                    }
-                    // schema: swagger
-                });
-            }
-            if(currentValue.JoiSchema.path){
-                const {swagger} = j2s(currentValue.JoiSchema.path);
-
-                for(pathKey in swagger.properties) {
-                    parameters.push({
-                        name: pathKey,
-                        in: "path",
-                        required: true,
-                        type: swagger.properties[pathKey].type
-                    });
-                }
-            }
-            if(currentValue.JoiSchema.query){
-                const {swagger} = j2s(currentValue.JoiSchema.query);
-                for(queryKey in swagger.properties) {
-                    parameters.push({
-                        name: queryKey,
-                        in: "query",
-                        required: swagger.required ? swagger.required.includes(queryKey) : false,
-                        type: swagger.properties[queryKey].type
-                    });
-                }
-            }
-            if(currentValue.JoiSchema.response){
-                responses = {};
-                const {swagger} = j2s(currentValue.JoiSchema.response);
-
-                for(statusCode in swagger.properties) {
-                    const modelName = `${key}${currentValue.type.capitalize()}${statusCode}Response`;
-                    json.definitions[modelName] = swagger.properties[statusCode].properties.body;
-    
-                    const data = {
-                        description: swagger.properties[statusCode].properties.description.enum[0],
-                        schema: {
-                            $ref: `#/definitions/${modelName}`
-                        },
-                    };
-    
-                    if(swagger.properties[statusCode].properties.header){
-                        data['headers'] = swagger.properties[statusCode].properties.header.properties;
-                        
-                        for(headerName in swagger.properties[statusCode].properties.header.properties) {
-                            mapHeader[`integration.response.header.${headerName}`] = `method.response.header.${headerName}`;
-                        }
-                    }
-                    
-                    responses[statusCode] = data;
-                }
-            }
-
-            // check for deprecation
-            if(currentValue.JoiSchema.deprecated && currentValue.JoiSchema.deprecated === true) {
-                deprecated = true
-            }
-        }
-       
-        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
-
-        paths[currentValue.type] = {
-            summary: currentValue.name,
-            consumes: [
-                'application/json'
-            ],
-            produces: [
-                'application/json'
-            ],
-            parameters,
-            responses,
-            deprecated,
-            "x-amazon-apigateway-integration": apiGateway
-        }
-    }
-    
+    json = applyLogic(json, validator.apiList);
     fs.outputFile(outputFile, JSON.stringify(json, null, 4), function(err){
         if(err) {
             console.error(err);
