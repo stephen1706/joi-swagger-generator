@@ -149,9 +149,15 @@ function applyLogic(json, apiList){
                 deprecated = true
             }
         }
-        
-        const apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
 
+        let apiGateway;
+        if(json.mapPath){
+            const editedPath = path.join(json.mapPath, currentValue.path);
+            apiGateway = getApiGatewayIntegration(currentValue, editedPath, mapHeader, requestMap);
+        } else {
+            apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
+        }
+        
         paths[currentValue.type] = {
             summary: currentValue.name,
             consumes: [
