@@ -42,16 +42,16 @@ function applyLogic(json, apiList){
     
         let paths;
         let convertedPath = path.join(basePath, currentValue.path);
-        const splitPath = convertedPath.split('/');
-        for(const i in splitPath){
-            let eachPath = splitPath[i];
-            if(eachPath.startsWith(":")){
-                eachPath = eachPath.substr(1); //remove :
-                eachPath = "{" + eachPath + "}";//make {path}
-                splitPath[i] = eachPath;
-            }
-        }
-        convertedPath = splitPath.join('/');
+        // const splitPath = convertedPath.split('/');
+        // for(const i in splitPath){
+        //     let eachPath = splitPath[i];
+        //     if(eachPath.startsWith(":")){
+        //         eachPath = eachPath.substr(1); //remove :
+        //         eachPath = "{" + eachPath + "}";//make {path}
+        //         splitPath[i] = eachPath;
+        //     }
+        // }
+        convertedPath = convertPath(convertedPath);
         
         if(json.paths[convertedPath]){
             paths = json.paths[convertedPath];
@@ -154,7 +154,9 @@ function applyLogic(json, apiList){
 
         let apiGateway;
         if(argv.mapPath){
-            const editedPath = path.join(argv.mapPath, currentValue.path);
+            let editedPath = path.join(argv.mapPath, currentValue.path);
+            editedPath = convertPath(editedPath);
+
             apiGateway = getApiGatewayIntegration(currentValue, editedPath, mapHeader, requestMap);
         } else {
             apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
@@ -255,6 +257,20 @@ if(argv.r){
             console.log('successfully write swagger file to ' + outputFile);
         }
     });
+}
+
+function convertPath(editedPath){
+    const splitPath = editedPath.split('/');
+    for(const i in splitPath){
+        let eachPath = splitPath[i];
+        if(eachPath.startsWith(":")){
+            eachPath = eachPath.substr(1); //remove :
+            eachPath = "{" + eachPath + "}";//make {path}
+            splitPath[i] = eachPath;
+        }
+    }
+    editedPath = splitPath.join('/');
+    return editedPath;
 }
 
 function getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap){
