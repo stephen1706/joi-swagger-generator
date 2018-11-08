@@ -4,11 +4,13 @@ const argv = require('yargs')
             .alias('o', 'output')
             .alias('h', 'header')
             .alias('b', 'baseUrl')
+            .alias('m', 'mapPath')
             .describe('v', 'Location of validator file or directory of the folder')
             .describe('o', 'Location of the output file location')
             .describe('h', 'Location of the header file in json format')
             .describe('r', 'For multiple files, will recursively search for .validator.js file in that directory')
             .describe('b', 'Override base url')
+            .describe('m', 'Override redirect path')
             .demandOption(['v','o','h'])
             .help('help')
             .example('joi-swagger-generator -r -v ./validators -h ./header.json -o ./swagger.json')
@@ -151,8 +153,8 @@ function applyLogic(json, apiList){
         }
 
         let apiGateway;
-        if(json.mapPath){
-            const editedPath = path.join(json.mapPath, currentValue.path);
+        if(argv.mapPath){
+            const editedPath = path.join(argv.mapPath, currentValue.path);
             apiGateway = getApiGatewayIntegration(currentValue, editedPath, mapHeader, requestMap);
         } else {
             apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
