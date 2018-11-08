@@ -3,10 +3,12 @@ const argv = require('yargs')
             .alias('v', 'validator')
             .alias('o', 'output')
             .alias('h', 'header')
+            .alias('b', 'baseUrl')
             .describe('v', 'Location of validator file or directory of the folder')
             .describe('o', 'Location of the output file location')
             .describe('h', 'Location of the header file in json format')
             .describe('r', 'For multiple files, will recursively search for .validator.js file in that directory')
+            .describe('b', 'Override base url')
             .demandOption(['v','o','h'])
             .help('help')
             .example('joi-swagger-generator -r -v ./validators -h ./header.json -o ./swagger.json')
@@ -20,6 +22,7 @@ const glob = require("glob")
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
+const baseUrl = argv.baseUrl ? argv.baseUrl : "http://${stageVariables.url}";
 const relativeValidatorPath = argv.validator;
 const validatorFile = path.resolve(relativeValidatorPath);
 
@@ -251,7 +254,7 @@ function getApiGatewayIntegration(currentValue, convertedPath, mapHeader, reques
         passthroughBehavior: "when_no_match",
         httpMethod: currentValue.type,
         type: "http_proxy",
-        uri: "http://${stageVariables.url}" + convertedPath,
+        uri: baseUrl + convertedPath,
         responses: {
             default: {
                 statusCode: "200"
