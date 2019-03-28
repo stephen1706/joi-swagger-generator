@@ -108,6 +108,18 @@ function applyLogic(json, apiList){
                     });
                 }
             }
+            if(currentValue.JoiSchema.params){
+                const {swagger} = j2s(currentValue.JoiSchema.params);
+        
+                for(pathKey in swagger.properties) {
+                    parameters.push({
+                        name: pathKey,
+                        in: "path",
+                        required: true,
+                        type: swagger.properties[pathKey].type
+                    });
+                }
+            }
             if(currentValue.JoiSchema.query){
                 const {swagger} = j2s(currentValue.JoiSchema.query);
                 

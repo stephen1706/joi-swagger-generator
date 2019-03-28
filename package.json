@@ -1,12 +1,13 @@
 {
   "name": "@astro-my/joi-swagger-generator",
-  "version": "1.2.17",
+  "version": "1.2.18",
   "description": "generate swagger.json file from joi schema file",
   "keywords": [
     "swagger",
     "joi",
     "converter"
   ],
+  "github": "https://github.com/stephen1706/joi-swagger-generator",
   "scripts": {
     "start": "node index.js",
     "test": "joi-swagger-generator -v ./test/validator.js -h ./test/header.json -o ./test/swagger.json",
