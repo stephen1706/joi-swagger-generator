@@ -63,8 +63,19 @@ function applyLogic(json, apiList){
         let parameters = []
         //default response
         let responses = {
-            "200": {
-                "description": "success operation"
+            '200': {
+                description: 'Default response for CORS method',
+                headers: {
+                    'Access-Control-Allow-Headers': {
+                        type: 'string'
+                    },
+                    'Access-Control-Allow-Methods': {
+                        type: 'string'
+                    },
+                    'Access-Control-Allow-Origin': {
+                        type: 'string'
+                    }
+                }
             }
         };
         let deprecated = false
@@ -155,6 +166,20 @@ function applyLogic(json, apiList){
                         }
                     }
                     
+                    if(statusCode >= 200 && statusCode < 400){
+                        if(!data.headers){
+                            data.headers = {};
+                        }
+                        data.headers['Access-Control-Allow-Headers'] = {
+                            type: 'string'
+                        };
+                        data.headers['Access-Control-Allow-Methods'] = {
+                            type: 'string'
+                        };
+                        data.headers['Access-Control-Allow-Origin'] = {
+                            type: 'string'
+                        };
+                    }
                     responses[statusCode] = data;
                 }
             }
@@ -186,6 +211,45 @@ function applyLogic(json, apiList){
             responses,
             deprecated,
             "x-amazon-apigateway-integration": apiGateway
+        }
+        
+        paths['options'] = {
+            summary: 'CORS Support',
+            consumes: [
+                'application/json'
+            ],
+            produces: [
+                'application/json'
+            ],
+            "x-amazon-apigateway-integration": {
+                type: 'mock',
+                responses: {
+                    default: {
+                        statusCode: "200",
+                        responseParameters: {
+                            'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+                            'method.response.header.Access-Control-Allow-Methods': "'*'",
+                            'method.response.header.Access-Control-Allow-Origin': "'*'"
+                        }
+                    }
+                }
+            },
+            responses: {
+                '200': {
+                    description: 'Default response for CORS method',
+                    headers: {
+                        'Access-Control-Allow-Headers': {
+                            type: 'string'
+                        },
+                        'Access-Control-Allow-Methods': {
+                            type: 'string'
+                        },
+                        'Access-Control-Allow-Origin': {
+                            type: 'string'
+                        }
+                    }
+                }
+            }
         }
     }
     return json;
