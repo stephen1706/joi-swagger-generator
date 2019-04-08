@@ -357,7 +357,12 @@ function getApiGatewayIntegration(currentValue, convertedPath, mapHeader, reques
         uri: baseUrl + convertedPath,
         responses: {
             default: {
-                statusCode: "200"
+                statusCode: '200',
+                responseParameters: {
+                    'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+                    'method.response.header.Access-Control-Allow-Methods': "'*'",
+                    'method.response.header.Access-Control-Allow-Origin': "'*'"
+                }
             }
         }
     }
