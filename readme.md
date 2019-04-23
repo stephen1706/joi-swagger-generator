@@ -34,6 +34,7 @@ You can install the package globally or just include them in the scripts in the 
 -h is the path to the header file
 -v is the path to your validator class
 -o is the location of the swagger file will be generated
+-g is to defined the api gateway url base path
 ```
 
 Example for 1 validator file

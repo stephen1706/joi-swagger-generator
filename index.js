@@ -5,12 +5,14 @@ const argv = require('yargs')
             .alias('h', 'header')
             .alias('b', 'baseUrl')
             .alias('m', 'mapPath')
+            .alias('g', 'apiGatewayPath')
             .describe('v', 'Location of validator file or directory of the folder')
             .describe('o', 'Location of the output file location')
             .describe('h', 'Location of the header file in json format')
             .describe('r', 'For multiple files, will recursively search for .validator.js file in that directory')
             .describe('b', 'Override base url')
             .describe('m', 'Override redirect path')
+            .describe('g', 'Api Gateway base path')
             .demandOption(['v','o','h'])
             .help('help')
             .example('joi-swagger-generator -r -v ./validators -h ./header.json -o ./swagger.json')
@@ -53,6 +55,10 @@ function applyLogic(json, apiList){
         // }
         convertedPath = convertPath(convertedPath);
         
+        if(argv.apiGatewayPath){
+            convertedPath = path.join(argv.apiGatewayPath, convertedPath);
+        }
+
         if(json.paths[convertedPath]){
             paths = json.paths[convertedPath];
         } else {
@@ -189,14 +195,16 @@ function applyLogic(json, apiList){
             }
         }
 
-        let apiGateway;
+        let apiGateway, corsApiGateway;
         if(argv.mapPath){
             let editedPath = path.join(argv.mapPath, currentValue.path);
             editedPath = convertPath(editedPath);
 
             apiGateway = getApiGatewayIntegration(currentValue, editedPath, mapHeader, requestMap);
+            corsApiGateway = getCorsApiGatewayIntegration(editedPath, mapHeader, requestMap);
         } else {
             apiGateway = getApiGatewayIntegration(currentValue, convertedPath, mapHeader, requestMap);
+            corsApiGateway = getCorsApiGatewayIntegration(convertedPath, mapHeader, requestMap);
         }
         
         paths[currentValue.type] = {
@@ -213,39 +221,30 @@ function applyLogic(json, apiList){
             "x-amazon-apigateway-integration": apiGateway
         }
         
-        paths['options'] = {
-            summary: 'CORS Support',
-            consumes: [
-                'application/json'
-            ],
-            produces: [
-                'application/json'
-            ],
-            "x-amazon-apigateway-integration": {
-                type: 'mock',
+        if(!paths.options){
+            paths['options'] = {
+                summary: 'CORS Support',
+                consumes: [
+                    'application/json'
+                ],
+                produces: [
+                    'application/json'
+                ],
+                parameters,
+                "x-amazon-apigateway-integration": corsApiGateway,
                 responses: {
-                    default: {
-                        statusCode: "200",
-                        responseParameters: {
-                            'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
-                            'method.response.header.Access-Control-Allow-Methods': "'*'",
-                            'method.response.header.Access-Control-Allow-Origin': "'*'"
-                        }
-                    }
-                }
-            },
-            responses: {
-                '200': {
-                    description: 'Default response for CORS method',
-                    headers: {
-                        'Access-Control-Allow-Headers': {
-                            type: 'string'
-                        },
-                        'Access-Control-Allow-Methods': {
-                            type: 'string'
-                        },
-                        'Access-Control-Allow-Origin': {
-                            type: 'string'
+                    '200': {
+                        description: 'Default response for CORS method',
+                        headers: {
+                            'Access-Control-Allow-Headers': {
+                                type: 'string'
+                            },
+                            'Access-Control-Allow-Methods': {
+                                type: 'string'
+                            },
+                            'Access-Control-Allow-Origin': {
+                                type: 'string'
+                            }
                         }
                     }
                 }
@@ -353,6 +352,40 @@ function getApiGatewayIntegration(currentValue, convertedPath, mapHeader, reques
     const apiGateway = {
         passthroughBehavior: "when_no_match",
         httpMethod: currentValue.type,
+        type: "http_proxy",
+        uri: baseUrl + convertedPath,
+        responses: {
+            default: {
+                statusCode: '200',
+                responseParameters: {
+                    'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
+                    'method.response.header.Access-Control-Allow-Methods': "'*'",
+                    'method.response.header.Access-Control-Allow-Origin': "'*'"
+                }
+            }
+        }
+    }
+    let requestPath = {...requestMap};
+    const splitPath = convertedPath.split('/');
+    for(const i in splitPath){
+        let eachPath = splitPath[i];
+        if(eachPath.startsWith("{") && eachPath.endsWith("}")){
+            const pathName = eachPath.slice(1, -1);
+            const keyName = "integration.request.path." + pathName;
+            const valueName = "method.request.path." + pathName;
+            requestPath[keyName] = valueName;
+        }
+    }
+
+    apiGateway["requestParameters"] = requestPath;
+    apiGateway["responseParameters"] = mapHeader;
+    return apiGateway;
+}
+
+function getCorsApiGatewayIntegration(convertedPath, mapHeader, requestMap){
+    const apiGateway = {
+        passthroughBehavior: "when_no_match",
+        httpMethod: "options",
         type: "http_proxy",
         uri: baseUrl + convertedPath,
         responses: {
