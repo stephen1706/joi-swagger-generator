@@ -55,14 +55,20 @@ function applyLogic(json, apiList){
         // }
         convertedPath = convertPath(convertedPath);
 
-        if(json.paths[convertedPath]){
-            paths = json.paths[convertedPath];
-        } else {
-            paths = {};
-
-            if(argv.apiGatewayPath){
-                json.paths[path.join(argv.apiGatewayPath, convertedPath)] = paths;
+        if(argv.apiGatewayPath){
+            const apiGatewayPath = path.join(argv.apiGatewayPath, convertedPath);
+            
+            if(json.paths[apiGatewayPath]){
+                paths = json.paths[apiGatewayPath];
             } else {
+                paths = {};
+                json.paths[apiGatewayPath] = paths;
+            }
+        } else {
+            if(json.paths[convertedPath]){
+                paths = json.paths[convertedPath];
+            } else {
+                paths = {};
                 json.paths[convertedPath] = paths;
             }
         }
