@@ -92,6 +92,10 @@ function applyLogic(json, apiList){
             }
         };
         let deprecated = false
+
+        if(!currentValue.JoiSchema){
+            currentValue.JoiSchema = currentValue.joiSchema;
+        }
         if(currentValue.JoiSchema){
             if(currentValue.JoiSchema.header){
                 const {swagger} = j2s(currentValue.JoiSchema.header);
