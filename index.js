@@ -97,8 +97,8 @@ function applyLogic(json, apiList){
             currentValue.JoiSchema = currentValue.joiSchema;
         }
         if(currentValue.JoiSchema){
-            if(currentValue.JoiSchema.header){
-                const {swagger} = j2s(currentValue.JoiSchema.header);
+            if(currentValue.JoiSchema.headers){
+                const {swagger} = j2s(currentValue.JoiSchema.headers);
         
                 for(headerKey in swagger.properties) {
                     parameters.push({
